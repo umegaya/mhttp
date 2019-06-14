@@ -1,0 +1,9 @@
+package/**/*.java
+package/**/*.cs
+package/**/*.jar
+package/**/*.a
+package/**/*.h
+package/**/*.mm
+package/**/*.meta
+package/*.meta
+.vscode
