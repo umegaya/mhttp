@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Mhttp {
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !UNITY_EDITOR
     public partial class Client {
         const int PROCESSING_PER_LOOP = 10;
         public class ResponseImpl : Response, IDisposable {

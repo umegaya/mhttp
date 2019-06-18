@@ -185,10 +185,10 @@ toCurrentTech:(nullable NSString *)newTech
 
 @end
 
-static NSInteger get_verb(const mhttp_request_t *req) {
-    const char *verb = req->method;
+static NSInteger get_verb(const char *method, const char *body) {
+    const char *verb = method;
     if (verb == NULL) {
-        if (req->body != NULL) {
+        if (body != NULL) {
             return TNLHTTPMethodPOST;
         } else {
             return TNLHTTPMethodGET;
@@ -228,22 +228,31 @@ mhttp_conn_t mhttp_connect(const char *connectivity_host) {
     return (mhttp_conn_t)c;
 }
 
-mhttp_response_t *mhttp_request(mhttp_conn_t c, const mhttp_request_t *req) {
-    NSURL *URL = [NSURL URLWithString:[NSString stringWithUTF8String:req->url]];
+mhttp_response_t *mhttp_request(mhttp_conn_t c,
+                                const char *url,
+                                const char *method,
+                                const char **headers,
+                                uint64_t headers_len,
+                                const char *body,
+                                uint64_t body_len,
+                                mhttp_closure_t *cb) {
+    NSURL *URL = [NSURL URLWithString:[NSString stringWithUTF8String:url]];
     TNLMutableHTTPRequest *request = [[TNLMutableHTTPRequest alloc] init];
-    request.HTTPMethodValue = get_verb(req);
+    request.HTTPMethodValue = get_verb(method, body);
     request.URL = URL;
     [request setValue:[NSString stringWithFormat:@"mhttp/tnl-%f", TNL_PROJECT_VERSION] forHTTPHeaderField:@"User-Agent"];
-    if (req->headers != NULL) {
-        for (int i = 0; i < req->headers_len; i+=2) {
-            [request setValue:[NSString stringWithUTF8String:req->headers[i+1]] forHTTPHeaderField:[NSString stringWithUTF8String:req->headers[i]]];
+    if (headers != NULL) {
+        for (int i = 0; i < headers_len; i+=2) {
+            [request setValue:[NSString stringWithUTF8String:headers[i+1]] forHTTPHeaderField:[NSString stringWithUTF8String:headers[i]]];
         }
     }
-    if (req->body != NULL) {
-        [request setHTTPBody:[NSData dataWithBytes:(const void *)req->body length:req->body_len]];
+    if (body != NULL) {
+        [request setHTTPBody:[NSData dataWithBytes:(const void *)body length:body_len]];
     }
     mhttp_response_t *resp = calloc(1, sizeof(mhttp_response_t));
-    resp->cb = req->cb;
+    if (cb != NULL) {
+        resp->cb = *cb;
+    }
     NSNumber *addr = [NSNumber numberWithInteger:(NSInteger)resp];
     @synchronized (c->valid_responses) {
         [c->valid_responses setObject:addr forKey:addr];
@@ -257,7 +266,8 @@ mhttp_response_t *mhttp_request(mhttp_conn_t c, const mhttp_request_t *req) {
             // this part does not assure that same thread as Unity's main thread.
             // so copy over every memory from TNLResponse. it may huge overhead but no choice.
             if (response.operationError != NULL) {
-                resp->error = [response.operationError.debugDescription UTF8String];
+                resp->error = strdup([response.operationError.debugDescription UTF8String]);
+                resp->error_len = [response.operationError.debugDescription length];
                 resp->status = -1;
             } else {
                 resp->status = response.info.statusCode;
@@ -284,12 +294,12 @@ mhttp_response_t *mhttp_request(mhttp_conn_t c, const mhttp_request_t *req) {
                     resp->body = body;
                     resp->body_len = length;
                 }
-                // eventually Unity main thread knows finished flag is on
-                resp->finished = 1;
                 if (resp->cb.cb != NULL) {
                     resp->cb.cb(resp->cb.arg, c, resp);
                 }
             }
+            // eventually Unity main thread knows finished flag is on
+            resp->finished = 1;
         }
     }];
     return resp;

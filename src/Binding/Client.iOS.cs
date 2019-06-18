@@ -8,7 +8,7 @@ using Marshal = System.Runtime.InteropServices.Marshal;
 using UnityEngine;
 
 namespace Mhttp {
-#if UNITY_IOS
+#if UNITY_IOS && !UNITY_EDITOR
     public partial class Client {
         const int PROCESSING_PER_LOOP = 10;
         public class ResponseImpl : Response, IDisposable {
@@ -28,8 +28,8 @@ namespace Mhttp {
 
             public void Dispose() {
                 if (handle_ != System.IntPtr.Zero) {
-                    // Debug.Log("dispose:" + uuid_);
-                    mhttp_response_end(handle_);
+                    // Debug.Log("dispose:" + ((ulong)handle_).ToString("X"));
+                    mhttp_response_end(client_, handle_);
                     handle_ = System.IntPtr.Zero;
                 }
             }
@@ -54,8 +54,11 @@ namespace Mhttp {
                     if (error_ == null) {
                         unsafe {
                             NativeResponse *pnr = (NativeResponse *)handle_.ToPointer();
-                            byte[] err = new byte[pnr->err_len];
-                            Marshal.Copy(pnr->error, err, 0, (int)pnr->err_len);
+                            if (pnr->error_len <= 0) {
+                                return null;
+                            }
+                            byte[] err = new byte[pnr->error_len];
+                            Marshal.Copy(pnr->error, err, 0, (int)pnr->error_len);
                             error_ = System.Text.Encoding.UTF8.GetString(err);
                         }
                     }
@@ -67,7 +70,10 @@ namespace Mhttp {
                     if (body_ == null) {
                         unsafe {
                             NativeResponse *pnr = (NativeResponse *)handle_.ToPointer();
-                            body_ = new byte[pnr->err_len];
+                            if (pnr->body_len <= 0) {
+                                return null;
+                            }
+                            body_ = new byte[pnr->body_len];
                             Marshal.Copy(pnr->body, body_, 0, (int)pnr->body_len);
                         }
                     }
@@ -93,30 +99,30 @@ namespace Mhttp {
         }
 
         static public Response Send(Request r) {
-            System.IntPtr resp_handle = System.IntPtr.Zero;
-            unsafe {
-                fixed (byte *body = r.body) {
-                    var nr = new NativeRequest {
-                        url = r.url,
-                        method = r.method,
-                        body = body,
-                        body_len = (ulong)r.body.Length,
-                    };
-                    if (r.headers != null) {
-                        System.IntPtr[] headers = new System.IntPtr[r.headers.Count * 2];
-                        int hd_len = 0;
-                        foreach (var kv in r.headers) {
-                            headers[hd_len] = Marshal.StringToCoTaskMemAnsi(kv.Key);
-                            headers[hd_len + 1] = Marshal.StringToCoTaskMemAnsi(kv.Value);
-                            hd_len += 2;
-                        }
-                        nr.headers = headers;
-                        nr.headers_len = (ulong)hd_len;
-                    }
-                    resp_handle = mhttp_request(client_, ref nr);
-                    nr.Free();
+            string[] headers = new string[(1 + (r.headers != null ? r.headers.Count : 0)) * 2];
+            int hd_len = 0;
+            if (r.body.Length > 0) {
+                headers[0] = "Content-Length";
+                headers[1] = r.body.Length.ToString();
+                hd_len = 2; 
+            }
+            if (r.headers != null) {
+                foreach (var kv in r.headers) {
+                    headers[hd_len] = kv.Key;
+                    headers[hd_len + 1] = kv.Value;
+                    hd_len += 2;
                 }
             }
+
+            var resp_handle = mhttp_request(client_, 
+                r.url,
+                r.method,
+                headers,
+                hd_len,
+                r.body,
+                r.body.Length,
+                null
+            );
             return new ResponseImpl(resp_handle, r);
         }
 
