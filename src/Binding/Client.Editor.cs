@@ -17,6 +17,7 @@ namespace Mhttp {
             internal ResponseImpl(UnityWebRequest webrequest, Request r) {
                 request_ = r;
                 response_ = webrequest;
+                response_.SendWebRequest();
             }
 
             // implements Response
@@ -46,7 +47,7 @@ namespace Mhttp {
             }
             public bool isDone {
                 get {
-                    return response_.downloadHandler.isDone;
+                    return response_.isDone;
                 }
             }
         }
@@ -58,9 +59,9 @@ namespace Mhttp {
             }
             if (r.method == null) {
                 if (r.body != null) {
-                    resp.method = "GET";
-                } else {
                     resp.method = "POST";
+                } else {
+                    resp.method = "GET";
                 }
             } else {
                 resp.method = r.method;
