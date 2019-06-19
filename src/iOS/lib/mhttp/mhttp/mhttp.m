@@ -14,10 +14,12 @@ NSString *MhttpCommunicationStatusUpdatedNotification = @"MhttpCommunicationStat
     NSString *_statusString;
     NSString *_carrierName;
     NSString *_radioTech;
+    TNLLogLevel _logLevel;
     bool _connected;
 }
 
 - (instancetype)initWithConnectivityHost:(NSString *)hostname
+                                logLevel:(TNLLogLevel)logLevel
 {
     // Set up logging
     [TNLGlobalConfiguration sharedInstance].logger = self;
@@ -35,6 +37,8 @@ NSString *MhttpCommunicationStatusUpdatedNotification = @"MhttpCommunicationStat
     [[TNLGlobalConfiguration sharedInstance] setMetricProvidingCommunicationAgent:_commAgent];
     [_commAgent addObserver:self];
     
+    _logLevel = logLevel;
+    
     return self;
 }
 
@@ -51,6 +55,9 @@ NSString *MhttpCommunicationStatusUpdatedNotification = @"MhttpCommunicationStat
 
 - (void)tnl_logWithLevel:(TNLLogLevel)level context:(id)context file:(NSString *)file function:(NSString *)function line:(int)line message:(NSString *)message
 {
+    if (level > _logLevel) {
+        return;
+    }
     NSString *levelString = nil;
     switch (level) {
         case TNLLogLevelEmergency:
@@ -223,7 +230,7 @@ struct _mhttp_conn {
 
 mhttp_conn_t mhttp_connect(const char *connectivity_host) {
     struct _mhttp_conn *c = malloc(sizeof(struct _mhttp_conn));
-    c->delegate = [[MhttpDelegate alloc] initWithConnectivityHost:[NSString stringWithUTF8String:connectivity_host]];
+    c->delegate = [[MhttpDelegate alloc] initWithConnectivityHost:[NSString stringWithUTF8String:connectivity_host] logLevel:TNLLogLevelWarning];
     c->valid_responses = [NSMutableDictionary dictionary];
     return (mhttp_conn_t)c;
 }

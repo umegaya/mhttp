@@ -96,7 +96,7 @@ namespace Mhttp {
             string url,
             string method,
             string[] headers,
-            byte[] body,
+            byte[] body
         ) {
             var resp_handle = mhttp_request(
                 client_, 
