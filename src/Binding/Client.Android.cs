@@ -80,9 +80,14 @@ namespace Mhttp {
             var uuid = System.Guid.NewGuid().ToString();
             var resp = new ResponseImpl(uuid);
             respmap_[uuid] = resp;
-            // this cast prevent warning: 
-            // AndroidJNIHelper.GetSignature: using Byte parameters is obsolete, use SByte parameters instead
-            client_.Call<string>("execute", uuid, url, method, headers, body);
+            sbyte[] sbody = null;
+            if (body != null) {
+                // this wasteful code to prevent warning: 
+                // AndroidJNIHelper.GetSignature: using Byte parameters is obsolete, use SByte parameters instead
+                sbody = new sbyte[body.Length];
+                Buffer.BlockCopy(body, 0, sbody, 0, body.Length);
+            }
+            client_.Call<string>("execute", uuid, url, method, headers, sbody);
             return resp;
         }
 
