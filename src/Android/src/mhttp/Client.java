@@ -70,7 +70,7 @@ public class Client {
         } else {
             b = b.method("GET", null);
         }
-        if (headers != null) {
+        if (headers != null && headers.length > 0) {
             Headers.Builder hb = new Headers.Builder();
             for (int i = 0; i < headers.length; i += 2) {
                 hb = hb.add(headers[i], headers[i + 1]);

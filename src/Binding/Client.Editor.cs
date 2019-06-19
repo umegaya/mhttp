@@ -11,21 +11,15 @@ namespace Mhttp {
     public partial class Client {
         const int PROCESSING_PER_LOOP = 10;
         public class ResponseImpl : Response {
-            Request request_;
             UnityWebRequest response_;
 
-            internal ResponseImpl(UnityWebRequest webrequest, Request r) {
-                request_ = r;
+            internal ResponseImpl(UnityWebRequest webrequest) {
                 response_ = webrequest;
                 response_.SendWebRequest();
             }
 
             // implements Response
-            public Request request {
-                get {
-                    return request_;
-                }
-            }
+            public Request request { get; set; }
 
             public int code {
                 get {
@@ -52,25 +46,32 @@ namespace Mhttp {
             }
         }
 
-        static public Response Send(Request r) {
-            var resp = new UnityWebRequest(r.url);
-            foreach (var kv in r.headers) {
-                resp.SetRequestHeader(kv.Key, kv.Value);
+        static public Response Send(
+            string url,
+            string method,
+            string[] headers,
+            byte[] body
+        ) {
+            var resp = new UnityWebRequest(url);
+            if (headers != null) {
+                for (int i = 0; i < headers.Length; i+=2) {
+                    resp.SetRequestHeader(headers[i], headers[i + 1]);
+                }
             }
-            if (r.method == null) {
-                if (r.body != null) {
+            if (method == null) {
+                if (body != null) {
                     resp.method = "POST";
                 } else {
                     resp.method = "GET";
                 }
             } else {
-                resp.method = r.method;
+                resp.method = method;
             }
-            if (r.body != null) {
-                resp.uploadHandler = (UploadHandler)new UploadHandlerRaw(r.body);
+            if (body != null) {
+                resp.uploadHandler = (UploadHandler)new UploadHandlerRaw(body);
             }
             resp.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
-            return new ResponseImpl(resp, r);
+            return new ResponseImpl(resp);
         }
 
         static public void Update() {

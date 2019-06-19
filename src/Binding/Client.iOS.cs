@@ -13,13 +13,11 @@ namespace Mhttp {
         const int PROCESSING_PER_LOOP = 10;
         public class ResponseImpl : Response, IDisposable {
             System.IntPtr handle_;
-            Request request_;
             string error_ = null;
             byte[] body_ = null;
 
-            internal ResponseImpl(System.IntPtr handle, Request r) {
+            internal ResponseImpl(System.IntPtr handle) {
                 handle_ = handle;
-                request_ = r;
             }
 
             ~ResponseImpl() {
@@ -35,11 +33,7 @@ namespace Mhttp {
             }
 
             // implements Response
-            public Request request {
-                get {
-                    return request_;
-                }
-            }
+            public Request request { get; set; }
 
             public int code {
                 get {
@@ -98,32 +92,23 @@ namespace Mhttp {
             client_ = mhttp_connect("www.google.com");
         }
 
-        static public Response Send(Request r) {
-            string[] headers = new string[(1 + (r.headers != null ? r.headers.Count : 0)) * 2];
-            int hd_len = 0;
-            if (r.body.Length > 0) {
-                headers[0] = "Content-Length";
-                headers[1] = r.body.Length.ToString();
-                hd_len = 2; 
-            }
-            if (r.headers != null) {
-                foreach (var kv in r.headers) {
-                    headers[hd_len] = kv.Key;
-                    headers[hd_len + 1] = kv.Value;
-                    hd_len += 2;
-                }
-            }
-
-            var resp_handle = mhttp_request(client_, 
-                r.url,
-                r.method,
+        static public Response Send(
+            string url,
+            string method,
+            string[] headers,
+            byte[] body,
+        ) {
+            var resp_handle = mhttp_request(
+                client_, 
+                url,
+                method,
                 headers,
-                hd_len,
-                r.body,
-                r.body.Length,
+                headers.Length,
+                body,
+                body != null ? body.Length : 0,
                 null
             );
-            return new ResponseImpl(resp_handle, r);
+            return new ResponseImpl(resp_handle);
         }
 
         static public void Update() {

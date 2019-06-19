@@ -10,11 +10,9 @@ namespace Mhttp {
         const int PROCESSING_PER_LOOP = 10;
         public class ResponseImpl : Response, IDisposable {
             string uuid_;
-            Request request_;
 
-            internal ResponseImpl(string uuid, Request r) {
+            internal ResponseImpl(string uuid) {
                 uuid_ = uuid;
-                request_ = r;
                 isDone = false;
             }
 
@@ -35,11 +33,7 @@ namespace Mhttp {
             }
 
             // implements Response
-            public Request request {
-                get {
-                    return request_;
-                }
-            }
+            public Request request { get; set; }
 
             public int code {
                 get {
@@ -77,19 +71,18 @@ namespace Mhttp {
             client_ = cls.CallStatic<AndroidJavaObject>("instance");
         }
 
-        static public Response Send(Request r) {
+        static public Response Send(
+            string url,
+            string method,
+            string[] headers,
+            byte[] body
+        ) {
             var uuid = System.Guid.NewGuid().ToString();
-            var resp = new ResponseImpl(uuid, r);
-            //var intptr = r.body != null ? AndroidJNI.ToByteArray(r.body) : System.IntPtr.Zero;
-            var headers = new string[2 * r.headers.Count];
-            var i = 0;
-            foreach (var kv in r.headers) {
-                headers[i] = kv.Key;
-                headers[i + 1] = kv.Value;
-                i += 2;
-            }
+            var resp = new ResponseImpl(uuid);
             respmap_[uuid] = resp;
-            client_.Call<string>("execute", uuid, r.url, r.method, headers, r.body);
+            // this cast prevent warning: 
+            // AndroidJNIHelper.GetSignature: using Byte parameters is obsolete, use SByte parameters instead
+            client_.Call<string>("execute", uuid, url, method, headers, body);
             return resp;
         }
 
