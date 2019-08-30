@@ -96,8 +96,12 @@ namespace Mhttp {
             string url,
             string method,
             string[] headers,
-            byte[] body
+            byte[] body,
+            Options options
         ) {
+            var lib_options = new RequestOptions {
+                filepath = options != null ? options.filepath : null
+            };
             var resp_handle = mhttp_request(
                 client_, 
                 url,
@@ -106,6 +110,7 @@ namespace Mhttp {
                 headers.Length,
                 body,
                 body != null ? body.Length : 0,
+                lib_options
                 null
             );
             return new ResponseImpl(resp_handle);

@@ -10,6 +10,9 @@ typedef struct _mhttp_closure {
     void *arg;
     void (*cb)(void *arg, mhttp_conn_t c, const struct _mhttp_response *body);
 } mhttp_closure_t;
+typedef struct _mhttp_options {
+    const char *filepath;
+} mhttp_options_t;
 struct _mhttp_response {
     int32_t status;
     volatile int32_t finished;
@@ -19,6 +22,7 @@ struct _mhttp_response {
     uint64_t body_len;
 	const char *error;
     uint64_t error_len;
+    mhttp_options_t options;
     mhttp_closure_t cb;
 };
 typedef struct _mhttp_response mhttp_response_t;
@@ -30,6 +34,7 @@ extern mhttp_response_t *mhttp_request(mhttp_conn_t c,
                                        uint64_t headers_len,
                                        const char *body,
                                        uint64_t body_len,
+                                       mhttp_options_t *options,
                                        mhttp_closure_t *cb);
 
 extern const char *mhttp_response_header(mhttp_response_t *resp, const char *key);

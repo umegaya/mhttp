@@ -50,7 +50,8 @@ namespace Mhttp {
             string url,
             string method,
             string[] headers,
-            byte[] body
+            byte[] body,
+            Options options
         ) {
             var resp = new UnityWebRequest(url);
             if (headers != null) {
@@ -70,7 +71,11 @@ namespace Mhttp {
             if (body != null) {
                 resp.uploadHandler = (UploadHandler)new UploadHandlerRaw(body);
             }
-            resp.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
+            if (options != null && options.filepath != null) {
+                resp.downloadHandler = (DownloadHandler)new DownloadHandlerFile(options.filepath);
+            } else {
+                resp.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
+            }
             return new ResponseImpl(resp);
         }
 

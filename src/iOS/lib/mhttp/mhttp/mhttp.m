@@ -242,6 +242,7 @@ mhttp_response_t *mhttp_request(mhttp_conn_t c,
                                 uint64_t headers_len,
                                 const char *body,
                                 uint64_t body_len,
+                                mhttp_options_t *options,
                                 mhttp_closure_t *cb) {
     NSURL *URL = [NSURL URLWithString:[NSString stringWithUTF8String:url]];
     TNLMutableHTTPRequest *request = [[TNLMutableHTTPRequest alloc] init];
@@ -259,6 +260,14 @@ mhttp_response_t *mhttp_request(mhttp_conn_t c,
     mhttp_response_t *resp = calloc(1, sizeof(mhttp_response_t));
     if (cb != NULL) {
         resp->cb = *cb;
+    }
+    if (options != NULL) {
+        if (options->filepath != NULL) {
+            resp->options.filepath = strdup(options->filepath);
+        } else {
+            // resp is calloced, so no need to do this
+            // resp->options.filepath = NULL;
+        }
     }
     NSNumber *addr = [NSNumber numberWithInteger:(NSInteger)resp];
     @synchronized (c->valid_responses) {
@@ -294,12 +303,17 @@ mhttp_response_t *mhttp_request(mhttp_conn_t c,
                     resp->headers_len = hdlen;
                 }
                 if (response.info.data != NULL) {
-                    // TODO: for file download, should we create file here and callback with no body memory?
-                    NSInteger length = [response.info.data length];
-                    void *body = malloc(length);
-                    memcpy(body, [response.info.data bytes], length);
-                    resp->body = body;
-                    resp->body_len = length;
+                    if (resp->options.filepath != NULL) {
+                        [response.info.data writeToFile:[NSString stringWithUTF8String:resp->options.filepath]
+                                             atomically:TRUE];
+                        // resp->body and body_len is already zero filled
+                    } else {
+                        NSInteger length = [response.info.data length];
+                        void *body = malloc(length);
+                        memcpy(body, [response.info.data bytes], length);
+                        resp->body = body;
+                        resp->body_len = length;
+                    }
                 }
                 if (resp->cb.cb != NULL) {
                     resp->cb.cb(resp->cb.arg, c, resp);
@@ -340,6 +354,9 @@ void mhttp_response_end(mhttp_conn_t c, mhttp_response_t *resp) {
             free((void *)resp->headers[i]);
         }
         free(resp->headers);
+    }
+    if (resp->options.filepath != NULL) {
+        free((void *)resp->options.filepath);
     }
     free(resp);
 }

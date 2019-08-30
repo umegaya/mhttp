@@ -75,7 +75,8 @@ namespace Mhttp {
             string url,
             string method,
             string[] headers,
-            byte[] body
+            byte[] body,
+            Options options
         ) {
             var uuid = System.Guid.NewGuid().ToString();
             var resp = new ResponseImpl(uuid);
@@ -87,7 +88,9 @@ namespace Mhttp {
                 sbody = new sbyte[body.Length];
                 Buffer.BlockCopy(body, 0, sbody, 0, body.Length);
             }
-            client_.Call<string>("execute", uuid, url, method, headers, sbody);
+            client_.Call<string>("execute", uuid, url, method, headers, sbody, 
+                options != null ? options.filepath : null
+            );
             return resp;
         }
 

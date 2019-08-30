@@ -27,18 +27,39 @@ public class Client {
         public Request request_;
         public Response response_ = null;
         public Exception error_ = null;
+        public byte[] body_ = null;
+        // options
+        public String filepath_ = null; 
 
-        public HttpTask(String uuid, Request r) {
+        public HttpTask(
+            String uuid, Request r,
+            String filepath
+        ) {
             uuid_ = uuid;
             request_ = r;
+            filepath_ = filepath;
         }
         @Override
         public void onFailure(Call call, IOException e) {
             error_ = e;
+
+            Client.instance().finished_.add(uuid_);
         }
         @Override
         public void onResponse(Call call, Response response) {
             response_ = response;
+            body_ = response.body().bytes();
+            if (filepath_ != null) {
+                try {
+                    try (FileOutputStream fs = new FileOutputStream(filepath_)) {
+                        fs.write(body_);
+                        body_ = null; // become target of GC immediately
+                    }
+                } catch (IOException e) {
+                    onFailure(call, e);
+                    return;
+                }
+            }
 
             Client.instance().finished_.add(uuid_);
         }
@@ -61,7 +82,8 @@ public class Client {
 
     public String execute(
         String uuid, 
-        String url, String method, String[] headers, byte[] body
+        String url, String method, String[] headers, byte[] body,
+        String filepath
     ) {
         Request.Builder b = new Request.Builder().url(url);
 
@@ -78,7 +100,7 @@ public class Client {
             b = b.headers(hb.build());
         }
         Request r = b.build();
-        HttpTask t = new HttpTask(uuid, r);
+        HttpTask t = new HttpTask(uuid, r, filepath);
         tasks_.put(uuid, t);
 
         client_.newCall(r).enqueue(t);
@@ -116,11 +138,7 @@ public class Client {
         if (t == null || t.response_ == null) {
             return null;
         }
-        try {
-            return t.response_.body().bytes();
-        } catch (IOException e) {
-            return null;
-        }
+        return t.response_.body_;
     }
 
     public String header(String uuid, String key) {

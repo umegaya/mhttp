@@ -19,6 +19,10 @@ namespace Mhttp {
             public System.IntPtr arg;
             public System.IntPtr cb;
         };
+        internal unsafe struct RequestOptions {
+            [MarshalAs(UnmanagedType.LPStr)]
+            public string filepath;
+        };
         internal unsafe struct NativeRequest {
             [MarshalAs(UnmanagedType.LPStr)]
             public string url;
@@ -70,6 +74,7 @@ namespace Mhttp {
             int headers_len,
             byte[] body,
             int body_len,
+            ref RequestOptions options,
             Closure cb
         );
         [DllImport (DllName)]
