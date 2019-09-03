@@ -25,6 +25,8 @@ namespace Mhttp {
             byte[] data { get; }
             string header(string key);
             bool isDone { get; }
+
+            void Abort();
         }
 
         static public Response Send(Request r) {

@@ -304,9 +304,36 @@ mhttp_response_t *mhttp_request(mhttp_conn_t c,
                 }
                 if (response.info.data != NULL) {
                     if (resp->options.filepath != NULL) {
-                        [response.info.data writeToFile:[NSString stringWithUTF8String:resp->options.filepath]
-                                             atomically:TRUE];
-                        // resp->body and body_len is already zero filled
+                        NSError *errptr = nil;
+                        NSString *path = [NSString stringWithUTF8String:resp->options.filepath];
+                        NSString *dir = [path stringByDeletingLastPathComponent];
+                        NSFileManager *fileManager = [NSFileManager defaultManager];
+                        if (![fileManager fileExistsAtPath:dir]) {
+                            if (![fileManager createDirectoryAtPath:dir
+                                        withIntermediateDirectories:YES
+                                                         attributes:nil
+                                                              error:&errptr]) {
+                                resp->error = strdup([[NSString stringWithFormat:@"fail to create dir %@", errptr]  UTF8String]);
+                                resp->error_len = strlen(resp->error);
+                                NSLog(@"fail to create dir from %@ to %@ => (%@)", URL, path, errptr);
+                                goto finished;
+                            }
+                        }
+                        if (![response.info.data writeToFile:path
+                                                     options:NSDataWritingAtomic
+                                                       error:&errptr]) {
+                            resp->error = strdup([[NSString stringWithFormat:@"fail to write file %@", errptr]  UTF8String]);
+                            resp->error_len = strlen(resp->error);
+                            NSLog(@"fail to write data from %@ to %@ => (%@)", URL, path, errptr);
+                            goto finished;
+                        }/* else {
+                            // resp->body and body_len is already zero filled
+                            if ([fileManager fileExistsAtPath:path]){
+                                NSLog(@"data from %@ write to: %@ => exists", URL, path);
+                            } else {
+                                NSLog(@"data from %@ write to: %@ => not exists", URL, path);
+                            }
+                        } */
                     } else {
                         NSInteger length = [response.info.data length];
                         void *body = malloc(length);
@@ -315,6 +342,7 @@ mhttp_response_t *mhttp_request(mhttp_conn_t c,
                         resp->body_len = length;
                     }
                 }
+            finished:
                 if (resp->cb.cb != NULL) {
                     resp->cb.cb(resp->cb.arg, c, resp);
                 }

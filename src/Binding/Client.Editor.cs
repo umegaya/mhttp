@@ -18,6 +18,10 @@ namespace Mhttp {
                 response_.SendWebRequest();
             }
 
+            public void Abort() {
+                response_.Abort();
+            }
+
             // implements Response
             public Request request { get; set; }
 
@@ -72,7 +76,9 @@ namespace Mhttp {
                 resp.uploadHandler = (UploadHandler)new UploadHandlerRaw(body);
             }
             if (options != null && options.filepath != null) {
-                resp.downloadHandler = (DownloadHandler)new DownloadHandlerFile(options.filepath);
+                resp.downloadHandler = (DownloadHandler)new UnityEngine.Networking.DownloadHandlerFile(
+                    options.filepath
+                );
             } else {
                 resp.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
             }

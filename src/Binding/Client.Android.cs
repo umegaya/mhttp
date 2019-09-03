@@ -28,6 +28,10 @@ namespace Mhttp {
                 }
             }
 
+            public void Abort() {
+                Dispose();
+            }
+
             public void Done() {
                 isDone = true;
             }

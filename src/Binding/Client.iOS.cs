@@ -11,7 +11,7 @@ namespace Mhttp {
 #if UNITY_IOS && !UNITY_EDITOR
     public partial class Client {
         const int PROCESSING_PER_LOOP = 10;
-        public class ResponseImpl : Response, IDisposable {
+            public class ResponseImpl : Response, IDisposable {
             System.IntPtr handle_;
             string error_ = null;
             byte[] body_ = null;
@@ -32,6 +32,10 @@ namespace Mhttp {
                 }
             }
 
+            public void Abort() {
+                Dispose();
+            }
+            
             // implements Response
             public Request request { get; set; }
 
@@ -110,7 +114,7 @@ namespace Mhttp {
                 headers.Length,
                 body,
                 body != null ? body.Length : 0,
-                lib_options
+                ref lib_options,
                 null
             );
             return new ResponseImpl(resp_handle);

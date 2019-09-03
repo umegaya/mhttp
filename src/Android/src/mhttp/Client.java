@@ -6,7 +6,9 @@ import java.util.regex.*;
 import java.util.UUID;
 import java.util.concurrent.*;
 import java.lang.Exception;
+import java.io.File;
 import java.io.IOException;
+import java.io.FileOutputStream;
 
 // because no jar file reference. but suprisingly smart, 
 // Unity Editor can correctly build this. 
@@ -48,19 +50,26 @@ public class Client {
         @Override
         public void onResponse(Call call, Response response) {
             response_ = response;
-            body_ = response.body().bytes();
-            if (filepath_ != null) {
-                try {
+            try {
+                body_ = response.body().bytes();
+                if (filepath_ != null) {
+                    File file = new File(filepath_);
+                    File parent = new File(file.getParent());
+                    if (!parent.exists()) {
+                        boolean created = parent.mkdirs();
+                        if (!created) {
+                            throw new IOException("fail to create dir at " + file.getParent());
+                        }
+                    }
                     try (FileOutputStream fs = new FileOutputStream(filepath_)) {
                         fs.write(body_);
                         body_ = null; // become target of GC immediately
                     }
-                } catch (IOException e) {
-                    onFailure(call, e);
-                    return;
                 }
+            } catch (IOException e) {
+                onFailure(call, e);
+                return;
             }
-
             Client.instance().finished_.add(uuid_);
         }
     }
@@ -135,10 +144,10 @@ public class Client {
 
     public byte[] body(String uuid) {
         HttpTask t = tasks_.get(uuid);
-        if (t == null || t.response_ == null) {
+        if (t == null) {
             return null;
         }
-        return t.response_.body_;
+        return t.body_;
     }
 
     public String header(String uuid, String key) {
