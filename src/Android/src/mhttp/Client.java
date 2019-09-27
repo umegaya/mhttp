@@ -52,7 +52,7 @@ public class Client {
             response_ = response;
             try {
                 body_ = response.body().bytes();
-                if (filepath_ != null) {
+                if (filepath_ != null && response_.code() == 200) {
                     File file = new File(filepath_);
                     File parent = new File(file.getParent());
                     if (!parent.exists()) {
@@ -155,7 +155,7 @@ public class Client {
         if (t == null) {
             return null;
         }
-        return t.response_.headers(key).get(0);
+        return t.response_.header(key);
     }
 
     public void endResponse(String uuid) {

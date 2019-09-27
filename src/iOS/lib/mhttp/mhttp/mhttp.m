@@ -279,7 +279,7 @@ mhttp_response_t *mhttp_request(mhttp_conn_t c,
             if ([c->valid_responses objectForKey:addr] == nil) {
                 return;
             }
-            // this part does not assure that same thread as Unity's main thread.
+            // this part does not assure to run on the same thread as Unity's main one.
             // so copy over every memory from TNLResponse. it may huge overhead but no choice.
             if (response.operationError != NULL) {
                 resp->error = strdup([response.operationError.debugDescription UTF8String]);
@@ -303,7 +303,7 @@ mhttp_response_t *mhttp_request(mhttp_conn_t c,
                     resp->headers_len = hdlen;
                 }
                 if (response.info.data != NULL) {
-                    if (resp->options.filepath != NULL) {
+                    if (resp->options.filepath != NULL && resp->status == 200) {
                         NSError *errptr = nil;
                         NSString *path = [NSString stringWithUTF8String:resp->options.filepath];
                         NSString *dir = [path stringByDeletingLastPathComponent];

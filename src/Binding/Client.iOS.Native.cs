@@ -81,8 +81,7 @@ namespace Mhttp {
         private static extern unsafe void mhttp_response_end(System.IntPtr c, System.IntPtr resp);
 
         [DllImport (DllName)]
-        [return: MarshalAs(UnmanagedType.LPStr)]
-        private static extern string mhttp_response_header(System.IntPtr resp, [MarshalAs(UnmanagedType.LPStr)]string hkey);
+        private static extern System.IntPtr mhttp_response_header(System.IntPtr resp, [MarshalAs(UnmanagedType.LPStr)]string hkey);
     }
 #endif
 }

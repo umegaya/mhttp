@@ -76,9 +76,9 @@ namespace Mhttp {
                 resp.uploadHandler = (UploadHandler)new UploadHandlerRaw(body);
             }
             if (options != null && options.filepath != null) {
-                resp.downloadHandler = (DownloadHandler)new UnityEngine.Networking.DownloadHandlerFile(
-                    options.filepath
-                );
+                var dh = new UnityEngine.Networking.DownloadHandlerFile(options.filepath);
+                dh.removeFileOnAbort = true;
+                resp.downloadHandler = (DownloadHandler)dh;
             } else {
                 resp.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
             }

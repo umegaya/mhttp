@@ -31,10 +31,6 @@ namespace Mhttp {
 
         static public Response Send(Request r) {
             List<string> headers = new List<string>();
-            if (r.body != null && r.body.Length > 0) {
-                headers.Add("Content-Length");
-                headers.Add(r.body.Length.ToString());
-            }
             if (r.headers != null) {
                 foreach (var kv in r.headers) {
                     headers.Add(kv.Key);

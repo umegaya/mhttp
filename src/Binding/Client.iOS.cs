@@ -79,7 +79,8 @@ namespace Mhttp {
                 }
             }
             public string header(string key) {
-                return mhttp_response_header(handle_, key);
+                var strptr = mhttp_response_header(handle_, key);
+                return Marshal.PtrToStringAnsi(strptr);
             }
             public bool isDone {
                 get {

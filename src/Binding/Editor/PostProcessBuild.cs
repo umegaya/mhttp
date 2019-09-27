@@ -15,8 +15,11 @@ public static class CustomPostProcessor
             PBXProject project = new PBXProject();
             project.ReadFromFile(projPath);
 
+#if UNITY_2019_3_OR_NEWER
+            string xcTarget = project.GetUnityMainTargetGuid();
+#else
             string xcTarget = project.TargetGuidByName(PBXProject.GetUnityTargetName());
- 
+#endif 
             project.AddBuildProperty(xcTarget, "OTHER_LDFLAGS", "-ObjC");
 
             File.WriteAllText(projPath, project.WriteToString());
