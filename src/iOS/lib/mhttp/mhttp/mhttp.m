@@ -201,21 +201,21 @@ static NSInteger get_verb(const char *method, const char *body) {
             return TNLHTTPMethodGET;
         }
     }
-    if (strcmp(verb, "GET") == 0) {
+    if (strcasecmp(verb, "GET") == 0) {
         return TNLHTTPMethodGET;
-    } else if (strcmp(verb, "POST") == 0) {
+    } else if (strcasecmp(verb, "POST") == 0) {
         return TNLHTTPMethodPOST;
-    } else if (strcmp(verb, "PUT") == 0) {
+    } else if (strcasecmp(verb, "PUT") == 0) {
         return TNLHTTPMethodPUT;
-    } else if (strcmp(verb, "DELETE") == 0) {
+    } else if (strcasecmp(verb, "DELETE") == 0) {
         return TNLHTTPMethodDELETE;
-    } else if (strcmp(verb, "OPTIONS") == 0) {
+    } else if (strcasecmp(verb, "OPTIONS") == 0) {
         return TNLHTTPMethodOPTIONS;
-    } else if (strcmp(verb, "HEAD") == 0) {
+    } else if (strcasecmp(verb, "HEAD") == 0) {
         return TNLHTTPMethodHEAD;
-    } else if (strcmp(verb, "TRACE") == 0) {
+    } else if (strcasecmp(verb, "TRACE") == 0) {
         return TNLHTTPMethodTRACE;
-    } else if (strcmp(verb, "CONNECT") == 0) {
+    } else if (strcasecmp(verb, "CONNECT") == 0) {
         return TNLHTTPMethodCONNECT;
     } else {
         return TNLHTTPMethodUnknown;
@@ -359,7 +359,7 @@ const char *mhttp_response_header(mhttp_response_t *resp, const char *key) {
         return NULL;
     }
     for (int i = 0; i < resp->headers_len; i += 2) {
-        if (strcmp(key, resp->headers[i]) == 0) {
+        if (strcasecmp(key, resp->headers[i]) == 0) {
             return resp->headers[i + 1];
         }
     }
